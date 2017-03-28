@@ -34,7 +34,7 @@ public class Server {
     private static final String SP = "$##$";
     private static final String SP_LINEA = "&00&";
 
-    private static final String LS = System.lineSeparator();
+    private static final String LS = "\n";
 
     private static SecretKey secretKey;
     private static KeyPair keyPair;
@@ -331,7 +331,7 @@ public class Server {
                             && !trosMissatgeTmp.contains(CLAUENCRIPTADAFI)) {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
-                    missatge.deleteCharAt(missatge.length() - LS.length());
+                    missatge.deleteCharAt(missatge.length() - 1);
 
                     String msgTotal = missatge.toString();
 
@@ -377,7 +377,7 @@ public class Server {
                             && !trosMissatgeTmp.contains(CLAUENCRIPTADAFI)) {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
-                    missatge.deleteCharAt(missatge.length() - LS.length());
+                    missatge.deleteCharAt(missatge.length() - 1);
 
                     String msgTotal = missatge.toString();
 
