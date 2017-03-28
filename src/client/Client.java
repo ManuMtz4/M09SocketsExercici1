@@ -33,7 +33,7 @@ public class Client {
     private static final String SP = "$##$";
     private static final String SP_LINEA = "&00&";
 
-    private static final String LS = System.lineSeparator();
+    private static final String LS = "\n";
 
     private static SecretKey secretKey;
     private static KeyPair keyPair;
@@ -77,7 +77,6 @@ public class Client {
 
                 //Processament de les dades rebudes i obtenció d’una nova petició.
                 continueConnected = getRequest(serverData);
-
             }
 
             close(socket);
@@ -121,7 +120,7 @@ public class Client {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
 
-                    missatge.deleteCharAt(missatge.length() - LS.length());
+                    missatge.deleteCharAt(missatge.length() - 1);
 
                     String msgTotal = missatge.toString();
 
@@ -167,7 +166,7 @@ public class Client {
                             && !trosMissatgeTmp.contains(CLAUENCRIPTADAFI)) {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
-                    missatge.deleteCharAt(missatge.length() - LS.length());
+                    missatge.deleteCharAt(missatge.length() - 1);
 
                     String msgTotal = missatge.toString();
 
