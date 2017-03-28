@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 /**
  * Server Socket
- * @autor Manuel Martinez
+ * @author Manuel Martinez
  * @copyright 2017, ManuMtz
  */
 
@@ -60,9 +60,7 @@ public class Server {
             0x08, 0x09, 0x0A, 0x0B,
             0x0C, 0x0D, 0x0E, 0x0F};
 
-
     private boolean farewellMessage = false;
-
 
     private void listen() {
         ServerSocket serverSocket;
@@ -510,7 +508,7 @@ public class Server {
             dadesDesencriptadesEnString = new String(dadesDesencriptadesEnByte);
 
         } catch (Exception ex) {
-            System.err.println("ERROR: R.E.menu13() " + ex);
+            System.err.println("ERROR: No es pot desencriptar " + ex);
         }
         return dadesDesencriptadesEnString;
     }
