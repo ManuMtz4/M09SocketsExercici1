@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 /**
  * Client Socket
- * @autor Manuel Martinez
+ * @author Manuel Martinez
  * @copyright 2017, ManuMtz
  */
 
@@ -492,7 +492,7 @@ public class Client {
             dadesDesencriptadesEnString = new String(dadesDesencriptadesEnByte);
 
         } catch (Exception ex) {
-            System.err.println("ERROR: R.E.menu13() " + ex);
+            System.err.println("ERROR: No es pot desencriptar " + ex);
         }
         return dadesDesencriptadesEnString;
     }
