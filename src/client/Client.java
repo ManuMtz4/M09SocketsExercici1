@@ -7,10 +7,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -23,41 +20,49 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by ManuMtz
+ * Client Socket
+ * @autor Manuel Martinez
+ * @copyright 2017, ManuMtz
  */
 
 public class Client {
 
-    BufferedReader in;
-    PrintStream out;
+    private BufferedReader in;
+    private PrintStream out;
 
     private static final String SP = "$##$";
-    private static final String SP_LINEA = "€ññ€";
+    private static final String SP_LINEA = "&00&";
 
-    static SecretKey secretKey;
-    static KeyPair keyPair;
-    static PublicKey clientKey;
+    private static final String LS = System.lineSeparator();
 
+    private static SecretKey secretKey;
+    private static KeyPair keyPair;
+    private static PublicKey clientKey;
+
+    private static final String BOOKS = "books";
+    private static final String REBUTDIR = "rebut";
+
+    private File draculaBook = new File(BOOKS + File.separator + "dracula.txt");
+    private File rebut = new File(REBUTDIR + File.separator + "mcristo.txt");
 
     private static final String TANCARCONNEXIO = "TANCARCONNEXIO";
     private static final String CHAT = "CHAT";
     private static final String RETORNCTRL = "RETORNCTRL";
     private static final String CLAUPUBLICA = "CLAUPUBLICA";
     private static final String MISSATGEENCRIPTAT = "MISSATGEENCRIPTAT";
-
+    private static final String MISSATGEENCRIPTATFILE = "MISSATGEENCRIPTATFILE";
     private static final String CLAUENCRIPTADA = "CLAUENCRIPTADA";
     private static final String CLAUENCRIPTADAFI = "CLAUENCRIPTADAFI";
 
-    static final byte[] IV_PARAM = {0x00, 0x01, 0x02, 0x03,
+    private static final byte[] IV_PARAM = {0x00, 0x01, 0x02, 0x03,
             0x04, 0x05, 0x06, 0x07,
             0x08, 0x09, 0x0A, 0x0B,
             0x0C, 0x0D, 0x0E, 0x0F};
 
-    boolean noTancar = true;
+    private boolean noTancar = true;
 
-    public void connect(String address, int port) {
+    private void connect(String address, int port) {
         String serverData;
-        boolean request;
         boolean continueConnected = true;
         Socket socket;
 
@@ -96,7 +101,7 @@ public class Client {
 
                 BASE64Decoder decoder = new BASE64Decoder();
                 try {
-                    String clauPub = st.nextToken().replaceAll(SP_LINEA, "\n");
+                    String clauPub = st.nextToken().replaceAll(SP_LINEA, LS);
                     byte[] clavePublica = decoder.decodeBuffer(clauPub);
                     clientKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(clavePublica));
                     System.out.println("Clau pùblica rebuda");
@@ -112,9 +117,11 @@ public class Client {
                 try {
                     while (((trosMissatgeTmp = in.readLine()) != null)
                             && !trosMissatgeTmp.contains(CLAUENCRIPTADAFI)) {
-                        missatge.append(trosMissatgeTmp).append("\n");
+
+                        missatge.append(trosMissatgeTmp).append(LS);
                     }
-                    missatge.deleteCharAt(missatge.length() - 1);
+
+                    missatge.deleteCharAt(missatge.length() - LS.length());
 
                     String msgTotal = missatge.toString();
 
@@ -145,8 +152,55 @@ public class Client {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
+            } else if (tipusMissatge.equals(MISSATGEENCRIPTATFILE)) {
+                StringBuilder missatge = new StringBuilder();
+                String trosMissatgeTmp;
 
+                File rebDir = new File(REBUTDIR);
+
+                if (!rebDir.exists()) {
+                    rebDir.mkdirs();
+                }
+
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(rebut, false))) {
+                    while (((trosMissatgeTmp = in.readLine()) != null)
+                            && !trosMissatgeTmp.contains(CLAUENCRIPTADAFI)) {
+                        missatge.append(trosMissatgeTmp).append(LS);
+                    }
+                    missatge.deleteCharAt(missatge.length() - LS.length());
+
+                    String msgTotal = missatge.toString();
+
+                    StringTokenizer msgTotalTokenizer = new StringTokenizer(msgTotal, SP);
+
+                    String missatgeEncriptat = "";
+                    String simetricKeyEncriptada = "";
+
+                    while (msgTotalTokenizer.hasMoreTokens()) {
+
+                        if (msgTotalTokenizer.nextToken().equals(MISSATGEENCRIPTAT)) {
+                            missatgeEncriptat = msgTotalTokenizer.nextToken();
+                        }
+
+                        if (msgTotalTokenizer.nextToken().equals(CLAUENCRIPTADA)) {
+                            simetricKeyEncriptada = msgTotalTokenizer.nextToken();
+                        }
+                    }
+
+                    BASE64Decoder decoder = new BASE64Decoder();
+
+                    byte[] missatgeEncriptatByte = decoder.decodeBuffer(missatgeEncriptat);
+                    byte[] simetricKeyEncriptadaByte = decoder.decodeBuffer(simetricKeyEncriptada);
+
+                    bw.write(desencriptarRSA(missatgeEncriptatByte, simetricKeyEncriptadaByte));
+                    bw.flush();
+
+                    System.out.println("Fitxer rebut");
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 
         }
 
@@ -179,6 +233,7 @@ public class Client {
         System.out.println("12. Enviar clau pública al SERVER");
         System.out.println("13. Encriptar missatge amb RSA amb clau embolcallada i enviar al SERVER");
         System.out.println("14. Encriptar missatge (mès linias) amb RSA amb clau embolcallada i enviar al SERVER");
+        System.out.println("15. Encriptar llibre amb RSA amb clau embolcallada i enviar al SERVER");
         System.out.println();
         System.out.print("opció?: ");
         opcio = sc.nextLine();
@@ -207,7 +262,7 @@ public class Client {
             case "12":
                 if (keyPair != null) {
                     BASE64Encoder encoder = new BASE64Encoder();
-                    String clavePublica = encoder.encode(keyPair.getPublic().getEncoded()).replaceAll("\n", SP_LINEA);
+                    String clavePublica = encoder.encode(keyPair.getPublic().getEncoded()).replaceAll(LS, SP_LINEA);
                     out.println(CLAUPUBLICA + SP + clavePublica);
                     out.flush();
                     System.out.println(clavePublica);
@@ -224,11 +279,13 @@ public class Client {
 
                     String missatgeEncriptat = encriptarRSA(missatgeAEncriptar);
 
+                    StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
                     out.println(MISSATGEENCRIPTAT);
                     out.flush();
 
-                    for (String m : missatgeEncriptat.split("\n")) {
-                        out.println(m);
+                    while (msgTokenizer.hasMoreTokens()) {
+                        out.println(msgTokenizer.nextToken());
                         out.flush();
                     }
 
@@ -266,18 +323,20 @@ public class Client {
                         System.out.print("linia " + (i + 1) + ": ");
                         String text = sc.nextLine();
                         lineasAEncriptar.append(text);
-                        lineasAEncriptar.append("\n");
+                        lineasAEncriptar.append(LS);
                     }
 
                     lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
 
                     String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
 
+                    StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
                     out.println(MISSATGEENCRIPTAT);
                     out.flush();
 
-                    for (String m : missatgeEncriptat.split("\n")) {
-                        out.println(m);
+                    while (msgTokenizer.hasMoreTokens()) {
+                        out.println(msgTokenizer.nextToken());
                         out.flush();
                     }
 
@@ -285,6 +344,50 @@ public class Client {
                     out.flush();
 
                     System.out.println("Missatge y clau enviada");
+
+                } else {
+                    System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
+                    System.out.println("A mès no t'oblides de crear la clau simetrica");
+                    menu();
+                }
+                break;
+            case "15":
+                if (clientKey != null && secretKey != null) {
+
+                    StringBuilder lineasAEncriptar = new StringBuilder();
+
+                    try (BufferedReader br = new BufferedReader(new FileReader(draculaBook))) {
+
+                        String sCurrentLine;
+
+                        while ((sCurrentLine = br.readLine()) != null) {
+                            lineasAEncriptar.append(sCurrentLine);
+                            lineasAEncriptar.append(LS);
+                        }
+
+                        lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+
+                    } catch (IOException e) {
+                        System.out.println("books/dracula.txt ha de existir (pot ser que no sigui aquest error)");
+                        menu();
+                    }
+
+                    String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
+
+                    StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
+                    out.println(MISSATGEENCRIPTATFILE);
+                    out.flush();
+
+                    while (msgTokenizer.hasMoreTokens()) {
+                        out.println(msgTokenizer.nextToken());
+                        out.flush();
+                    }
+
+                    out.println(CLAUENCRIPTADAFI);
+                    out.flush();
+
+                    System.out.println("Llibre y clau enviada");
 
                 } else {
                     System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
