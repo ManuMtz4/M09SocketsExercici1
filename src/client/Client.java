@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 /**
  * Client Socket
  * @author Manuel Martinez
- * @copyright 2017, ManuMtz
+ * Copyright 2017, ManuMtz
  */
 
 public class Client {
@@ -34,6 +34,7 @@ public class Client {
     private static final String SP_LINEA = "&00&";
 
     private static final String LS = "\n";
+    private static final String FS = File.separator;
 
     private static SecretKey secretKey;
     private static KeyPair keyPair;
@@ -42,8 +43,8 @@ public class Client {
     private static final String BOOKS = "books";
     private static final String REBUTDIR = "rebut";
 
-    private File draculaBook = new File(BOOKS + File.separator + "dracula.txt");
-    private File rebut = new File(REBUTDIR + File.separator + "mcristo.txt");
+    private File draculaBook = new File(BOOKS + FS + "dracula.txt");
+    private File rebut = new File(REBUTDIR + FS + "mcristo.txt");
 
     private static final String TANCARCONNEXIO = "TANCARCONNEXIO";
     private static final String CHAT = "CHAT";

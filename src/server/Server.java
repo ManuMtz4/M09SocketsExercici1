@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * Server Socket
  * @author Manuel Martinez
- * @copyright 2017, ManuMtz
+ * Copyright 2017, ManuMtz
  */
 
 public class Server {
@@ -35,6 +35,7 @@ public class Server {
     private static final String SP_LINEA = "&00&";
 
     private static final String LS = "\n";
+    private static final String FS = File.separator;
 
     private static SecretKey secretKey;
     private static KeyPair keyPair;
@@ -43,8 +44,8 @@ public class Server {
     private static final String BOOKS = "books";
     private static final String REBUTDIR = "rebut";
 
-    private File mCristoBook = new File(BOOKS + File.separator + "mcristo.txt");
-    private File rebut = new File(REBUTDIR + File.separator + "dracula.txt");
+    private File mCristoBook = new File(BOOKS + FS + "mcristo.txt");
+    private File rebut = new File(REBUTDIR + FS + "dracula.txt");
 
     private static final String TANCARCONNEXIO = "TANCARCONNEXIO";
     private static final String CHAT = "CHAT";
