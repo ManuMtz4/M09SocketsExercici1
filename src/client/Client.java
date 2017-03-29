@@ -21,8 +21,9 @@ import java.util.logging.Logger;
 
 /**
  * Client Socket
+ *
  * @author Manuel Martinez
- * Copyright 2017, ManuMtz
+ *         Copyright 2017, ManuMtz
  */
 
 public class Client {
@@ -47,13 +48,21 @@ public class Client {
     private File rebut = new File(REBUTDIR + FS + "mcristo.txt");
 
     private static final String TANCARCONNEXIO = "TANCARCONNEXIO";
+
     private static final String CHAT = "CHAT";
+
     private static final String RETORNCTRL = "RETORNCTRL";
+
     private static final String CLAUPUBLICA = "CLAUPUBLICA";
+
     private static final String MISSATGEENCRIPTAT = "MISSATGEENCRIPTAT";
     private static final String MISSATGEENCRIPTATFILE = "MISSATGEENCRIPTATFILE";
+
     private static final String CLAUENCRIPTADA = "CLAUENCRIPTADA";
     private static final String CLAUENCRIPTADAFI = "CLAUENCRIPTADAFI";
+
+    private static final String CHATLINIAS = "CHATLINIAS";
+    private static final String CHATLINIASFI = "CHATLINIASFI";
 
     private static final byte[] IV_PARAM = {0x00, 0x01, 0x02, 0x03,
             0x04, 0x05, 0x06, 0x07,
@@ -96,7 +105,7 @@ public class Client {
             String tipusMissatge = st.nextToken();
 
             if (tipusMissatge.equals(CHAT)) {
-                System.out.println("Missatge CHAT del CLIENT: " + st.nextToken());
+                System.out.println("Missatge CHAT del SERVER: " + st.nextToken());
             } else if (tipusMissatge.equals(CLAUPUBLICA)) {
 
                 BASE64Decoder decoder = new BASE64Decoder();
@@ -146,7 +155,7 @@ public class Client {
                     byte[] missatgeEncriptatByte = decoder.decodeBuffer(missatgeEncriptat);
                     byte[] simetricKeyEncriptadaByte = decoder.decodeBuffer(simetricKeyEncriptada);
 
-                    System.out.println("Missatge del CLIENT:");
+                    System.out.println("Missatge del SERVER:");
                     System.out.println(desencriptarRSA(missatgeEncriptatByte, simetricKeyEncriptadaByte));
 
                 } catch (IOException e) {
@@ -200,6 +209,27 @@ public class Client {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            } else if (tipusMissatge.equals(CHATLINIAS)) {
+                StringBuilder missatge = new StringBuilder();
+                String trosMissatgeTmp;
+
+                try {
+                    while (((trosMissatgeTmp = in.readLine()) != null)
+                            && !trosMissatgeTmp.contains(CHATLINIASFI)) {
+                        missatge.append(trosMissatgeTmp).append(LS);
+                    }
+
+                    missatge.deleteCharAt(missatge.length() - 1);
+
+                    String msgTotal = missatge.toString();
+
+                    System.out.println("Missatge CHAT (mès linias) del SERVER:");
+
+                    System.out.println(msgTotal);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
         }
@@ -232,8 +262,12 @@ public class Client {
         System.out.println("11. Generar clau simètrica i público-privades");
         System.out.println("12. Enviar clau pública al SERVER");
         System.out.println("13. Encriptar missatge amb RSA amb clau embolcallada i enviar al SERVER");
+        System.out.println();
+        System.out.println("EXTRAS");
+        System.out.println();
         System.out.println("14. Encriptar missatge (mès linias) amb RSA amb clau embolcallada i enviar al SERVER");
         System.out.println("15. Encriptar llibre amb RSA amb clau embolcallada i enviar al SERVER");
+        System.out.println("16. Enviar un missatge (mès linias) al SERVER");
         System.out.println();
         System.out.print("opció?: ");
         opcio = sc.nextLine();
@@ -304,46 +338,45 @@ public class Client {
 
                     StringBuilder lineasAEncriptar = new StringBuilder();
 
+                    int intLineas;
                     System.out.print("Cuantes linies: ");
                     String nLineas = sc.nextLine();
-                    int intLineas = 0;
 
                     try {
                         intLineas = Integer.parseInt(nLineas);
                         if (intLineas < 1) {
-                            System.out.println("1 linia per defecte");
-                            intLineas = 1;
+                            throw new NumberFormatException("Nùmero de linies no vàlid");
                         }
+
+                        for (int i = 0; i < intLineas; i++) {
+                            System.out.print("linia " + (i + 1) + ": ");
+                            String text = sc.nextLine();
+                            lineasAEncriptar.append(text);
+                            lineasAEncriptar.append(LS);
+                        }
+
+                        lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+
+                        String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
+                        StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
+                        out.println(MISSATGEENCRIPTAT);
+                        out.flush();
+
+                        while (msgTokenizer.hasMoreTokens()) {
+                            out.println(msgTokenizer.nextToken());
+                            out.flush();
+                        }
+
+                        out.println(CLAUENCRIPTADAFI);
+                        out.flush();
+
+                        System.out.println("Missatge y clau enviada");
+
                     } catch (NumberFormatException nfe) {
                         System.out.println("Nùmero de linies no vàlid");
                         menu();
                     }
-
-                    for (int i = 0; i < intLineas; i++) {
-                        System.out.print("linia " + (i + 1) + ": ");
-                        String text = sc.nextLine();
-                        lineasAEncriptar.append(text);
-                        lineasAEncriptar.append(LS);
-                    }
-
-                    lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
-
-                    String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
-
-                    StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
-
-                    out.println(MISSATGEENCRIPTAT);
-                    out.flush();
-
-                    while (msgTokenizer.hasMoreTokens()) {
-                        out.println(msgTokenizer.nextToken());
-                        out.flush();
-                    }
-
-                    out.println(CLAUENCRIPTADAFI);
-                    out.flush();
-
-                    System.out.println("Missatge y clau enviada");
 
                 } else {
                     System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
@@ -367,31 +400,73 @@ public class Client {
 
                         lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
 
+                        String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
+
+                        StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
+                        out.println(MISSATGEENCRIPTATFILE);
+                        out.flush();
+
+                        while (msgTokenizer.hasMoreTokens()) {
+                            out.println(msgTokenizer.nextToken());
+                            out.flush();
+                        }
+
+                        out.println(CLAUENCRIPTADAFI);
+                        out.flush();
+
+                        System.out.println("Llibre y clau enviada");
+
                     } catch (IOException e) {
                         System.out.println("books/dracula.txt ha de existir (pot ser que no sigui aquest error)");
                         menu();
                     }
 
-                    String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
-
-                    StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
-
-                    out.println(MISSATGEENCRIPTATFILE);
-                    out.flush();
-
-                    while (msgTokenizer.hasMoreTokens()) {
-                        out.println(msgTokenizer.nextToken());
-                        out.flush();
-                    }
-
-                    out.println(CLAUENCRIPTADAFI);
-                    out.flush();
-
-                    System.out.println("Llibre y clau enviada");
-
                 } else {
                     System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
                     System.out.println("A mès no t'oblides de crear la clau simetrica");
+                    menu();
+                }
+                break;
+            case "16":
+                StringBuilder lineasDelMissatge = new StringBuilder();
+
+                System.out.print("Cuantes linies: ");
+                String nLineas = sc.nextLine();
+
+                try {
+                    int intLineas = Integer.parseInt(nLineas);
+                    if (intLineas < 1) {
+                        throw new NumberFormatException("Nùmero de linies no vàlid");
+                    } else {
+
+                        for (int i = 0; i < intLineas; i++) {
+                            System.out.print("linia " + (i + 1) + ": ");
+                            String text = sc.nextLine();
+                            lineasDelMissatge.append(text);
+                            lineasDelMissatge.append(LS);
+                        }
+
+                        lineasDelMissatge.deleteCharAt(lineasDelMissatge.length() - 1);
+
+                        StringTokenizer msgTokenizer = new StringTokenizer(lineasDelMissatge.toString(), LS);
+
+                        out.println(CHATLINIAS);
+                        out.flush();
+
+                        while (msgTokenizer.hasMoreTokens()) {
+                            out.println(msgTokenizer.nextToken());
+                            out.flush();
+                        }
+
+                        out.println(CHATLINIASFI);
+                        out.flush();
+
+                        System.out.println("Missatge enviat");
+                    }
+
+                } catch (NumberFormatException nfe) {
+                    System.out.println("Nùmero de linies no vàlid");
                     menu();
                 }
                 break;
