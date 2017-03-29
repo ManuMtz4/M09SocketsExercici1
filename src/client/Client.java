@@ -62,6 +62,7 @@ public class Client {
     private static final String CLAUENCRIPTADAFI = "CLAUENCRIPTADAFI";
 
     private static final String CHATLINIAS = "CHATLINIAS";
+    private static final String CHATFILE = "CHATFILE";
     private static final String CHATLINIASFI = "CHATLINIASFI";
 
     private static final byte[] IV_PARAM = {0x00, 0x01, 0x02, 0x03,
@@ -128,6 +129,7 @@ public class Client {
         System.out.println("14. Encriptar missatge (mès linias) amb RSA amb clau embolcallada i enviar al SERVER");
         System.out.println("15. Encriptar llibre amb RSA amb clau embolcallada i enviar al SERVER");
         System.out.println("16. Enviar un missatge (mès linias) al SERVER");
+        System.out.println("17. Enviar un llibre al SERVER");
         System.out.println();
         System.out.print("opció?: ");
         opcio = sc.nextLine();
@@ -331,6 +333,40 @@ public class Client {
                     menu();
                 }
                 break;
+            case "17":
+                StringBuilder lineasDelLlibre = new StringBuilder();
+
+                try (BufferedReader br = new BufferedReader(new FileReader(draculaBook))) {
+
+                    String sCurrentLine;
+
+                    while ((sCurrentLine = br.readLine()) != null) {
+                        lineasDelLlibre.append(sCurrentLine);
+                        lineasDelLlibre.append(LS);
+                    }
+
+                    lineasDelLlibre.deleteCharAt(lineasDelLlibre.length() - 1);
+
+                    StringTokenizer msgTokenizer = new StringTokenizer(lineasDelLlibre.toString(), LS);
+
+                    out.println(CHATFILE);
+                    out.flush();
+
+                    while (msgTokenizer.hasMoreTokens()) {
+                        out.println(msgTokenizer.nextToken());
+                        out.flush();
+                    }
+
+                    out.println(CHATLINIASFI);
+                    out.flush();
+
+                    System.out.println("Llibre enviat");
+
+                } catch (IOException e) {
+                    System.out.println("books/dracula.txt ha de existir (pot ser que no sigui aquest error)");
+                    menu();
+                }
+                break;
             default:
                 menu();
         }
@@ -465,6 +501,34 @@ public class Client {
                     System.out.println("Missatge CHAT (mès linias) del SERVER:");
 
                     System.out.println(msgTotal);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (tipusMissatge.equals(CHATFILE)) {
+                StringBuilder missatge = new StringBuilder();
+                String trosMissatgeTmp;
+
+                File rebDir = new File(REBUTDIR);
+
+                if (!rebDir.exists()) {
+                    rebDir.mkdirs();
+                }
+
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(rebut, false))) {
+                    while (((trosMissatgeTmp = in.readLine()) != null)
+                            && !trosMissatgeTmp.contains(CHATLINIASFI)) {
+                        missatge.append(trosMissatgeTmp).append(LS);
+                    }
+
+                    missatge.deleteCharAt(missatge.length() - 1);
+
+
+                    bw.write(missatge.toString());
+                    bw.flush();
+
+                    System.out.println("Fitxer rebut");
+
 
                 } catch (IOException e) {
                     e.printStackTrace();
