@@ -97,6 +97,245 @@ public class Client {
         }
     }
 
+    private boolean getRequest(String serverData) {
+
+        noTancar = processData(serverData);
+
+        if (!noTancar) {
+            return false;
+        }
+
+        menu();
+
+        return noTancar;
+    }
+
+    private void menu() {
+        String opcio;
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("---------------- Client ----------------");
+        System.out.println();
+        System.out.println("0. Desconnectar-se del SERVER");
+        System.out.println("1. Enviar un missatge al SERVER");
+        System.out.println("2. Retornar el control de les comunicacions al SERVER");
+        System.out.println("11. Generar clau simètrica i público-privades");
+        System.out.println("12. Enviar clau pública al SERVER");
+        System.out.println("13. Encriptar missatge amb RSA amb clau embolcallada i enviar al SERVER");
+        System.out.println();
+        System.out.println("EXTRAS");
+        System.out.println();
+        System.out.println("14. Encriptar missatge (mès linias) amb RSA amb clau embolcallada i enviar al SERVER");
+        System.out.println("15. Encriptar llibre amb RSA amb clau embolcallada i enviar al SERVER");
+        System.out.println("16. Enviar un missatge (mès linias) al SERVER");
+        System.out.println();
+        System.out.print("opció?: ");
+        opcio = sc.nextLine();
+
+        switch (opcio) {
+            case "0":
+                out.println(TANCARCONNEXIO + SP + "El server tanca la comunicació");
+                out.flush();
+                noTancar = false;
+                break;
+            case "1":
+                System.out.print("Nou missatge: ");
+                String missatge = sc.nextLine();
+                out.println("CHAT" + SP + missatge);
+                out.flush();
+                break;
+            case "2":
+                out.println(RETORNCTRL + SP + "El SERVER retorna el control de les comunicacions al CLIENT");
+                out.flush();
+                break;
+            case "11":
+                secretKey = generadorDeClausSimetriques(128);
+                keyPair = generadorDeClausAsimetriques(1024);
+                menu();
+                break;
+            case "12":
+                if (keyPair != null) {
+                    BASE64Encoder encoder = new BASE64Encoder();
+                    String clavePublica = encoder.encode(keyPair.getPublic().getEncoded()).replaceAll(LS, SP_LINEA);
+                    out.println(CLAUPUBLICA + SP + clavePublica);
+                    out.flush();
+                    System.out.println(clavePublica);
+                    System.out.println("Clau enviada");
+                } else {
+                    System.out.println("Has de generar la clau pùblica del menu 11");
+                    menu();
+                }
+                break;
+            case "13":
+                if (clientKey != null && secretKey != null) {
+                    System.out.print("Nou missatge a encriptar: ");
+                    String missatgeAEncriptar = sc.nextLine();
+
+                    String missatgeEncriptat = encriptarRSA(missatgeAEncriptar);
+
+                    StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
+                    out.println(MISSATGEENCRIPTAT);
+                    out.flush();
+
+                    while (msgTokenizer.hasMoreTokens()) {
+                        out.println(msgTokenizer.nextToken());
+                        out.flush();
+                    }
+
+                    out.println(CLAUENCRIPTADAFI);
+                    out.flush();
+
+                    System.out.println("Missatge y clau enviada");
+                } else {
+                    System.out.println("El CLIENT ha de enviar la seva clau pùblica abans de tot");
+                    System.out.println("A mès no t'oblides de crear la clau simetrica");
+                    menu();
+                }
+                break;
+            case "14":
+                if (clientKey != null && secretKey != null) {
+
+                    StringBuilder lineasAEncriptar = new StringBuilder();
+
+                    int intLineas;
+                    System.out.print("Cuantes linies: ");
+                    String nLineas = sc.nextLine();
+
+                    try {
+                        intLineas = Integer.parseInt(nLineas);
+                        if (intLineas < 1) {
+                            throw new NumberFormatException("Nùmero de linies no vàlid");
+                        } else {
+
+                            for (int i = 0; i < intLineas; i++) {
+                                System.out.print("linia " + (i + 1) + ": ");
+                                String text = sc.nextLine();
+                                lineasAEncriptar.append(text);
+                                lineasAEncriptar.append(LS);
+                            }
+
+                            lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+
+                            String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
+                            StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
+                            out.println(MISSATGEENCRIPTAT);
+                            out.flush();
+
+                            while (msgTokenizer.hasMoreTokens()) {
+                                out.println(msgTokenizer.nextToken());
+                                out.flush();
+                            }
+
+                            out.println(CLAUENCRIPTADAFI);
+                            out.flush();
+
+                            System.out.println("Missatge y clau enviada");
+                        }
+
+                    } catch (NumberFormatException nfe) {
+                        System.out.println("Nùmero de linies no vàlid");
+                        menu();
+                    }
+
+                } else {
+                    System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
+                    System.out.println("A mès no t'oblides de crear la clau simetrica");
+                    menu();
+                }
+                break;
+            case "15":
+                if (clientKey != null && secretKey != null) {
+
+                    StringBuilder lineasAEncriptar = new StringBuilder();
+
+                    try (BufferedReader br = new BufferedReader(new FileReader(draculaBook))) {
+
+                        String sCurrentLine;
+
+                        while ((sCurrentLine = br.readLine()) != null) {
+                            lineasAEncriptar.append(sCurrentLine);
+                            lineasAEncriptar.append(LS);
+                        }
+
+                        lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+
+                        String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
+
+                        StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+
+                        out.println(MISSATGEENCRIPTATFILE);
+                        out.flush();
+
+                        while (msgTokenizer.hasMoreTokens()) {
+                            out.println(msgTokenizer.nextToken());
+                            out.flush();
+                        }
+
+                        out.println(CLAUENCRIPTADAFI);
+                        out.flush();
+
+                        System.out.println("Llibre y clau enviada");
+
+                    } catch (IOException e) {
+                        System.out.println("books/dracula.txt ha de existir (pot ser que no sigui aquest error)");
+                        menu();
+                    }
+
+                } else {
+                    System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
+                    System.out.println("A mès no t'oblides de crear la clau simetrica");
+                    menu();
+                }
+                break;
+            case "16":
+                StringBuilder lineasDelMissatge = new StringBuilder();
+
+                System.out.print("Cuantes linies: ");
+                String nLineas = sc.nextLine();
+
+                try {
+                    int intLineas = Integer.parseInt(nLineas);
+                    if (intLineas < 1) {
+                        throw new NumberFormatException("Nùmero de linies no vàlid");
+                    } else {
+
+                        for (int i = 0; i < intLineas; i++) {
+                            System.out.print("linia " + (i + 1) + ": ");
+                            String text = sc.nextLine();
+                            lineasDelMissatge.append(text);
+                            lineasDelMissatge.append(LS);
+                        }
+
+                        lineasDelMissatge.deleteCharAt(lineasDelMissatge.length() - 1);
+
+                        StringTokenizer msgTokenizer = new StringTokenizer(lineasDelMissatge.toString(), LS);
+
+                        out.println(CHATLINIAS);
+                        out.flush();
+
+                        while (msgTokenizer.hasMoreTokens()) {
+                            out.println(msgTokenizer.nextToken());
+                            out.flush();
+                        }
+
+                        out.println(CHATLINIASFI);
+                        out.flush();
+
+                        System.out.println("Missatge enviat");
+                    }
+
+                } catch (NumberFormatException nfe) {
+                    System.out.println("Nùmero de linies no vàlid");
+                    menu();
+                }
+                break;
+            default:
+                menu();
+        }
+    }
+
     private boolean processData(String serverData) {
 
         if (!serverData.isEmpty()) {
@@ -235,244 +474,6 @@ public class Client {
         }
 
         return !serverData.contains(TANCARCONNEXIO);
-    }
-
-    private boolean getRequest(String serverData) {
-
-        noTancar = processData(serverData);
-
-        if (!noTancar) {
-            return false;
-        }
-
-        menu();
-
-        return noTancar;
-    }
-
-    private void menu() {
-        String opcio;
-        Scanner sc = new Scanner(System.in);
-
-        System.out.println("---------------- Client ----------------");
-        System.out.println();
-        System.out.println("0. Desconnectar-se del SERVER");
-        System.out.println("1. Enviar un missatge al SERVER");
-        System.out.println("2. Retornar el control de les comunicacions al SERVER");
-        System.out.println("11. Generar clau simètrica i público-privades");
-        System.out.println("12. Enviar clau pública al SERVER");
-        System.out.println("13. Encriptar missatge amb RSA amb clau embolcallada i enviar al SERVER");
-        System.out.println();
-        System.out.println("EXTRAS");
-        System.out.println();
-        System.out.println("14. Encriptar missatge (mès linias) amb RSA amb clau embolcallada i enviar al SERVER");
-        System.out.println("15. Encriptar llibre amb RSA amb clau embolcallada i enviar al SERVER");
-        System.out.println("16. Enviar un missatge (mès linias) al SERVER");
-        System.out.println();
-        System.out.print("opció?: ");
-        opcio = sc.nextLine();
-
-        switch (opcio) {
-            case "0":
-                out.println(TANCARCONNEXIO + SP + "El server tanca la comunicació");
-                out.flush();
-                noTancar = false;
-                break;
-            case "1":
-                System.out.print("Nou missatge: ");
-                String missatge = sc.nextLine();
-                out.println("CHAT" + SP + missatge);
-                out.flush();
-                break;
-            case "2":
-                out.println(RETORNCTRL + SP + "El SERVER retorna el control de les comunicacions al CLIENT");
-                out.flush();
-                break;
-            case "11":
-                secretKey = generadorDeClausSimetriques(128);
-                keyPair = generadorDeClausAsimetriques(1024);
-                menu();
-                break;
-            case "12":
-                if (keyPair != null) {
-                    BASE64Encoder encoder = new BASE64Encoder();
-                    String clavePublica = encoder.encode(keyPair.getPublic().getEncoded()).replaceAll(LS, SP_LINEA);
-                    out.println(CLAUPUBLICA + SP + clavePublica);
-                    out.flush();
-                    System.out.println(clavePublica);
-                    System.out.println("Clau enviada");
-                } else {
-                    System.out.println("Has de generar la clau pùblica del menu 11");
-                    menu();
-                }
-                break;
-            case "13":
-                if (clientKey != null && secretKey != null) {
-                    System.out.print("Nou missatge a encriptar: ");
-                    String missatgeAEncriptar = sc.nextLine();
-
-                    String missatgeEncriptat = encriptarRSA(missatgeAEncriptar);
-
-                    StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
-
-                    out.println(MISSATGEENCRIPTAT);
-                    out.flush();
-
-                    while (msgTokenizer.hasMoreTokens()) {
-                        out.println(msgTokenizer.nextToken());
-                        out.flush();
-                    }
-
-                    out.println(CLAUENCRIPTADAFI);
-                    out.flush();
-
-                    System.out.println("Missatge y clau enviada");
-                } else {
-                    System.out.println("El CLIENT ha de enviar la seva clau pùblica abans de tot");
-                    System.out.println("A mès no t'oblides de crear la clau simetrica");
-                    menu();
-                }
-                break;
-            case "14":
-                if (clientKey != null && secretKey != null) {
-
-                    StringBuilder lineasAEncriptar = new StringBuilder();
-
-                    int intLineas;
-                    System.out.print("Cuantes linies: ");
-                    String nLineas = sc.nextLine();
-
-                    try {
-                        intLineas = Integer.parseInt(nLineas);
-                        if (intLineas < 1) {
-                            throw new NumberFormatException("Nùmero de linies no vàlid");
-                        }
-
-                        for (int i = 0; i < intLineas; i++) {
-                            System.out.print("linia " + (i + 1) + ": ");
-                            String text = sc.nextLine();
-                            lineasAEncriptar.append(text);
-                            lineasAEncriptar.append(LS);
-                        }
-
-                        lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
-
-                        String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
-                        StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
-
-                        out.println(MISSATGEENCRIPTAT);
-                        out.flush();
-
-                        while (msgTokenizer.hasMoreTokens()) {
-                            out.println(msgTokenizer.nextToken());
-                            out.flush();
-                        }
-
-                        out.println(CLAUENCRIPTADAFI);
-                        out.flush();
-
-                        System.out.println("Missatge y clau enviada");
-
-                    } catch (NumberFormatException nfe) {
-                        System.out.println("Nùmero de linies no vàlid");
-                        menu();
-                    }
-
-                } else {
-                    System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
-                    System.out.println("A mès no t'oblides de crear la clau simetrica");
-                    menu();
-                }
-                break;
-            case "15":
-                if (clientKey != null && secretKey != null) {
-
-                    StringBuilder lineasAEncriptar = new StringBuilder();
-
-                    try (BufferedReader br = new BufferedReader(new FileReader(draculaBook))) {
-
-                        String sCurrentLine;
-
-                        while ((sCurrentLine = br.readLine()) != null) {
-                            lineasAEncriptar.append(sCurrentLine);
-                            lineasAEncriptar.append(LS);
-                        }
-
-                        lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
-
-                        String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
-
-                        StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
-
-                        out.println(MISSATGEENCRIPTATFILE);
-                        out.flush();
-
-                        while (msgTokenizer.hasMoreTokens()) {
-                            out.println(msgTokenizer.nextToken());
-                            out.flush();
-                        }
-
-                        out.println(CLAUENCRIPTADAFI);
-                        out.flush();
-
-                        System.out.println("Llibre y clau enviada");
-
-                    } catch (IOException e) {
-                        System.out.println("books/dracula.txt ha de existir (pot ser que no sigui aquest error)");
-                        menu();
-                    }
-
-                } else {
-                    System.out.println("El SERVER ha de enviar la seva clau pùblica abans de tot");
-                    System.out.println("A mès no t'oblides de crear la clau simetrica");
-                    menu();
-                }
-                break;
-            case "16":
-                StringBuilder lineasDelMissatge = new StringBuilder();
-
-                System.out.print("Cuantes linies: ");
-                String nLineas = sc.nextLine();
-
-                try {
-                    int intLineas = Integer.parseInt(nLineas);
-                    if (intLineas < 1) {
-                        throw new NumberFormatException("Nùmero de linies no vàlid");
-                    } else {
-
-                        for (int i = 0; i < intLineas; i++) {
-                            System.out.print("linia " + (i + 1) + ": ");
-                            String text = sc.nextLine();
-                            lineasDelMissatge.append(text);
-                            lineasDelMissatge.append(LS);
-                        }
-
-                        lineasDelMissatge.deleteCharAt(lineasDelMissatge.length() - 1);
-
-                        StringTokenizer msgTokenizer = new StringTokenizer(lineasDelMissatge.toString(), LS);
-
-                        out.println(CHATLINIAS);
-                        out.flush();
-
-                        while (msgTokenizer.hasMoreTokens()) {
-                            out.println(msgTokenizer.nextToken());
-                            out.flush();
-                        }
-
-                        out.println(CHATLINIASFI);
-                        out.flush();
-
-                        System.out.println("Missatge enviat");
-                    }
-
-                } catch (NumberFormatException nfe) {
-                    System.out.println("Nùmero de linies no vàlid");
-                    menu();
-                }
-                break;
-            default:
-                menu();
-        }
     }
 
     private void close(Socket socket) {

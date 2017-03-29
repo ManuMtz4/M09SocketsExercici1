@@ -223,32 +223,33 @@ public class Server {
                         int intLineas = Integer.parseInt(nLineas);
                         if (intLineas < 1) {
                             throw new NumberFormatException("Nùmero de linies no vàlid");
-                        }
+                        } else {
 
-                        for (int i = 0; i < intLineas; i++) {
-                            System.out.print("linia " + (i + 1) + ": ");
-                            String text = sc.nextLine();
-                            lineasAEncriptar.append(text);
-                            lineasAEncriptar.append(LS);
-                        }
+                            for (int i = 0; i < intLineas; i++) {
+                                System.out.print("linia " + (i + 1) + ": ");
+                                String text = sc.nextLine();
+                                lineasAEncriptar.append(text);
+                                lineasAEncriptar.append(LS);
+                            }
 
-                        lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+                            lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
 
-                        String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
-                        StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
+                            String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
+                            StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
 
-                        out.println(MISSATGEENCRIPTAT);
-                        out.flush();
-
-                        while (msgTokenizer.hasMoreTokens()) {
-                            out.println(msgTokenizer.nextToken());
+                            out.println(MISSATGEENCRIPTAT);
                             out.flush();
+
+                            while (msgTokenizer.hasMoreTokens()) {
+                                out.println(msgTokenizer.nextToken());
+                                out.flush();
+                            }
+
+                            out.println(CLAUENCRIPTADAFI);
+                            out.flush();
+
+                            System.out.println("Missatge y clau enviada");
                         }
-
-                        out.println(CLAUENCRIPTADAFI);
-                        out.flush();
-
-                        System.out.println("Missatge y clau enviada");
 
                     } catch (NumberFormatException nfe) {
                         System.out.println("Nùmero de linies no vàlid");
