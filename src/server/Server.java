@@ -133,7 +133,7 @@ public class Server {
         String opcio;
         Scanner sc = new Scanner(System.in);
 
-        System.out.println("---------------- Server ----------------");
+        System.out.println("---------------- SERVER ----------------");
         System.out.println();
         System.out.println("0. Desconnectar-se del CLIENT");
         System.out.println("1. Enviar un missatge al CLIENT");

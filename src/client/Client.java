@@ -115,7 +115,7 @@ public class Client {
         String opcio;
         Scanner sc = new Scanner(System.in);
 
-        System.out.println("---------------- Client ----------------");
+        System.out.println("---------------- CLIENT ----------------");
         System.out.println();
         System.out.println("0. Desconnectar-se del SERVER");
         System.out.println("1. Enviar un missatge al SERVER");
@@ -505,6 +505,7 @@ public class Client {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
             } else if (tipusMissatge.equals(CHATFILE)) {
                 StringBuilder missatge = new StringBuilder();
                 String trosMissatgeTmp;
@@ -528,7 +529,6 @@ public class Client {
                     bw.flush();
 
                     System.out.println("Fitxer rebut");
-
 
                 } catch (IOException e) {
                     e.printStackTrace();
