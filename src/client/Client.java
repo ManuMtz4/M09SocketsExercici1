@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -32,9 +33,12 @@ public class Client {
     private PrintStream out;
 
     private static final String SP = "$##$";
-    private static final String SP_LINEA = "&00&";
 
-    private static final String LS = "\n";
+    private static final String NULL = "null";
+
+    private static final String LS = System.lineSeparator();
+    private static final int LS_SIZE = LS.length();
+
     private static final String FS = File.separator;
 
     private static SecretKey secretKey;
@@ -54,10 +58,10 @@ public class Client {
     private static final String RETORNCTRL = "RETORNCTRL";
 
     private static final String CLAUPUBLICA = "CLAUPUBLICA";
+    private static final String CLAUPUBLICAFI = "CLAUPUBLICAFI";
 
     private static final String MISSATGEENCRIPTAT = "MISSATGEENCRIPTAT";
     private static final String MISSATGEENCRIPTATFILE = "MISSATGEENCRIPTATFILE";
-
     private static final String CLAUENCRIPTADA = "CLAUENCRIPTADA";
     private static final String CLAUENCRIPTADAFI = "CLAUENCRIPTADAFI";
 
@@ -158,9 +162,22 @@ public class Client {
             case "12":
                 if (keyPair != null) {
                     BASE64Encoder encoder = new BASE64Encoder();
-                    String clavePublica = encoder.encode(keyPair.getPublic().getEncoded()).replaceAll(LS, SP_LINEA);
-                    out.println(CLAUPUBLICA + SP + clavePublica);
+                    String clavePublica = encoder.encode(keyPair.getPublic().getEncoded());
+
+                    StringTokenizer cPublicaTokenizer = new StringTokenizer(clavePublica, LS);
+
+                    out.println(CLAUPUBLICA);
                     out.flush();
+
+                    while (cPublicaTokenizer.hasMoreElements()) {
+                        String tmpLine = cPublicaTokenizer.nextToken(LS);
+                        out.println(tmpLine);
+                        out.flush();
+                    }
+
+                    out.println(CLAUPUBLICAFI);
+                    out.flush();
+
                     System.out.println(clavePublica);
                     System.out.println("Clau enviada");
                 } else {
@@ -181,7 +198,7 @@ public class Client {
                     out.flush();
 
                     while (msgTokenizer.hasMoreTokens()) {
-                        out.println(msgTokenizer.nextToken());
+                        out.println(msgTokenizer.nextToken(LS));
                         out.flush();
                     }
 
@@ -217,7 +234,9 @@ public class Client {
                                 lineasAEncriptar.append(LS);
                             }
 
-                            lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+                            for (int i = 0; i < LS_SIZE; i++) {
+                                lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+                            }
 
                             String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
                             StringTokenizer msgTokenizer = new StringTokenizer(missatgeEncriptat, LS);
@@ -226,7 +245,7 @@ public class Client {
                             out.flush();
 
                             while (msgTokenizer.hasMoreTokens()) {
-                                out.println(msgTokenizer.nextToken());
+                                out.println(msgTokenizer.nextToken(LS));
                                 out.flush();
                             }
 
@@ -261,7 +280,13 @@ public class Client {
                             lineasAEncriptar.append(LS);
                         }
 
-                        lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+                        try {
+                            for (int i = 0; i < LS_SIZE; i++) {
+                                lineasAEncriptar.deleteCharAt(lineasAEncriptar.length() - 1);
+                            }
+                        } catch (StringIndexOutOfBoundsException sOB) {
+                            lineasAEncriptar.append(NULL);
+                        }
 
                         String missatgeEncriptat = encriptarRSA(lineasAEncriptar.toString());
 
@@ -271,7 +296,7 @@ public class Client {
                         out.flush();
 
                         while (msgTokenizer.hasMoreTokens()) {
-                            out.println(msgTokenizer.nextToken());
+                            out.println(msgTokenizer.nextToken(LS));
                             out.flush();
                         }
 
@@ -310,7 +335,9 @@ public class Client {
                             lineasDelMissatge.append(LS);
                         }
 
-                        lineasDelMissatge.deleteCharAt(lineasDelMissatge.length() - 1);
+                        for (int i = 0; i < LS_SIZE; i++) {
+                            lineasDelMissatge.deleteCharAt(lineasDelMissatge.length() - 1);
+                        }
 
                         StringTokenizer msgTokenizer = new StringTokenizer(lineasDelMissatge.toString(), LS);
 
@@ -318,7 +345,7 @@ public class Client {
                         out.flush();
 
                         while (msgTokenizer.hasMoreTokens()) {
-                            out.println(msgTokenizer.nextToken());
+                            out.println(msgTokenizer.nextToken(LS));
                             out.flush();
                         }
 
@@ -345,7 +372,13 @@ public class Client {
                         lineasDelLlibre.append(LS);
                     }
 
-                    lineasDelLlibre.deleteCharAt(lineasDelLlibre.length() - 1);
+                    try {
+                        for (int i = 0; i < LS_SIZE; i++) {
+                            lineasDelLlibre.deleteCharAt(lineasDelLlibre.length() - 1);
+                        }
+                    } catch (StringIndexOutOfBoundsException sOB) {
+                        lineasDelLlibre.append(NULL);
+                    }
 
                     StringTokenizer msgTokenizer = new StringTokenizer(lineasDelLlibre.toString(), LS);
 
@@ -353,7 +386,7 @@ public class Client {
                     out.flush();
 
                     while (msgTokenizer.hasMoreTokens()) {
-                        out.println(msgTokenizer.nextToken());
+                        out.println(msgTokenizer.nextToken(LS));
                         out.flush();
                     }
 
@@ -377,16 +410,38 @@ public class Client {
         if (!serverData.isEmpty()) {
 
             StringTokenizer st = new StringTokenizer(serverData, SP);
-            String tipusMissatge = st.nextToken();
+            String tipusMissatge = st.nextToken(SP);
 
             if (tipusMissatge.equals(CHAT)) {
-                System.out.println("Missatge CHAT del SERVER: " + st.nextToken());
+                System.out.println("Missatge CHAT del SERVER:");
+
+                try {
+                    String msg = st.nextToken(SP);
+                    System.out.println(msg);
+                } catch (NoSuchElementException ns) {
+                    System.out.println(NULL);
+                }
+
             } else if (tipusMissatge.equals(CLAUPUBLICA)) {
 
                 BASE64Decoder decoder = new BASE64Decoder();
                 try {
-                    String clauPub = st.nextToken().replaceAll(SP_LINEA, LS);
-                    byte[] clavePublica = decoder.decodeBuffer(clauPub);
+
+                    StringBuilder clauPublica = new StringBuilder();
+
+                    String trosMissatgeTmp;
+
+                    while (((trosMissatgeTmp = in.readLine()) != null)
+                            && !trosMissatgeTmp.contains(CLAUPUBLICAFI)) {
+                        clauPublica.append(trosMissatgeTmp).append(LS);
+                    }
+
+                    for (int i = 0; i < LS_SIZE; i++) {
+                        clauPublica.deleteCharAt(clauPublica.length() - 1);
+                    }
+
+                    byte[] clavePublica = decoder.decodeBuffer(clauPublica.toString());
+
                     clientKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(clavePublica));
                     System.out.println("Clau pùblica rebuda");
                 } catch (IOException | InvalidKeySpecException | NoSuchAlgorithmException e) {
@@ -405,7 +460,9 @@ public class Client {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
 
-                    missatge.deleteCharAt(missatge.length() - 1);
+                    for (int i = 0; i < LS_SIZE; i++) {
+                        missatge.deleteCharAt(missatge.length() - 1);
+                    }
 
                     String msgTotal = missatge.toString();
 
@@ -416,12 +473,12 @@ public class Client {
 
                     while (msgTotalTokenizer.hasMoreTokens()) {
 
-                        if (msgTotalTokenizer.nextToken().equals(MISSATGEENCRIPTAT)) {
-                            missatgeEncriptat = msgTotalTokenizer.nextToken();
+                        if (msgTotalTokenizer.nextToken(SP).equals(MISSATGEENCRIPTAT)) {
+                            missatgeEncriptat = msgTotalTokenizer.nextToken(SP);
                         }
 
-                        if (msgTotalTokenizer.nextToken().equals(CLAUENCRIPTADA)) {
-                            simetricKeyEncriptada = msgTotalTokenizer.nextToken();
+                        if (msgTotalTokenizer.nextToken(SP).equals(CLAUENCRIPTADA)) {
+                            simetricKeyEncriptada = msgTotalTokenizer.nextToken(SP);
                         }
                     }
 
@@ -451,7 +508,10 @@ public class Client {
                             && !trosMissatgeTmp.contains(CLAUENCRIPTADAFI)) {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
-                    missatge.deleteCharAt(missatge.length() - 1);
+
+                    for (int i = 0; i < LS_SIZE; i++) {
+                        missatge.deleteCharAt(missatge.length() - 1);
+                    }
 
                     String msgTotal = missatge.toString();
 
@@ -462,12 +522,12 @@ public class Client {
 
                     while (msgTotalTokenizer.hasMoreTokens()) {
 
-                        if (msgTotalTokenizer.nextToken().equals(MISSATGEENCRIPTAT)) {
-                            missatgeEncriptat = msgTotalTokenizer.nextToken();
+                        if (msgTotalTokenizer.nextToken(SP).equals(MISSATGEENCRIPTAT)) {
+                            missatgeEncriptat = msgTotalTokenizer.nextToken(SP);
                         }
 
-                        if (msgTotalTokenizer.nextToken().equals(CLAUENCRIPTADA)) {
-                            simetricKeyEncriptada = msgTotalTokenizer.nextToken();
+                        if (msgTotalTokenizer.nextToken(SP).equals(CLAUENCRIPTADA)) {
+                            simetricKeyEncriptada = msgTotalTokenizer.nextToken(SP);
                         }
                     }
 
@@ -494,11 +554,20 @@ public class Client {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
 
-                    missatge.deleteCharAt(missatge.length() - 1);
-
-                    String msgTotal = missatge.toString();
-
                     System.out.println("Missatge CHAT (mès linias) del SERVER:");
+
+                    String msgTotal;
+
+                    if (!missatge.toString().isEmpty()) {
+
+                        for (int i = 0; i < LS_SIZE; i++) {
+                            missatge.deleteCharAt(missatge.length() - 1);
+                        }
+
+                        msgTotal = missatge.toString();
+                    } else {
+                        msgTotal = NULL;
+                    }
 
                     System.out.println(msgTotal);
 
@@ -522,8 +591,9 @@ public class Client {
                         missatge.append(trosMissatgeTmp).append(LS);
                     }
 
-                    missatge.deleteCharAt(missatge.length() - 1);
-
+                    for (int i = 0; i < LS_SIZE; i++) {
+                        missatge.deleteCharAt(missatge.length() - 1);
+                    }
 
                     bw.write(missatge.toString());
                     bw.flush();
