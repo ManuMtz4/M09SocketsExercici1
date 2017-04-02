@@ -140,7 +140,7 @@ public class Client {
 
         switch (opcio) {
             case "0":
-                out.println(TANCARCONNEXIO + SP + "El server tanca la comunicació");
+                out.println(TANCARCONNEXIO + SP + "El client tanca la comunicació");
                 out.flush();
                 noTancar = false;
                 break;
