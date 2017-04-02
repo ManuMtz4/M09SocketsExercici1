@@ -151,7 +151,7 @@ public class Client {
                 out.flush();
                 break;
             case "2":
-                out.println(RETORNCTRL + SP + "El SERVER retorna el control de les comunicacions al CLIENT");
+                out.println(RETORNCTRL + SP + "El CLIENT retorna el control de les comunicacions al SERVER");
                 out.flush();
                 break;
             case "11":
