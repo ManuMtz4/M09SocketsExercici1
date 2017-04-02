@@ -147,7 +147,7 @@ public class Client {
             case "1":
                 System.out.print("Nou missatge: ");
                 String missatge = sc.nextLine();
-                out.println("CHAT" + SP + missatge);
+                out.println(CHAT + SP + missatge);
                 out.flush();
                 break;
             case "2":
